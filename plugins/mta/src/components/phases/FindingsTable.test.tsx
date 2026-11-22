@@ -264,6 +264,60 @@ describe('finding links', () => {
     ).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('locates the finding again after the link names an unknown one', () => {
+    render(
+      <MemoryRouter initialEntries={['/migration?issue=issue-15']}>
+        <FindingsTable issues={issues(25)} />
+        <IssueLink id="does-not-exist" />
+        <IssueLink id="issue-15" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('Finding 11')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Previous table page' }),
+    );
+    expect(screen.getByText('Finding 1')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Link to does-not-exist' }),
+    );
+    expect(screen.getByText('Finding 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Link to issue-15' }));
+    expect(screen.getByText('Finding 11')).toBeInTheDocument();
+    expect(screen.queryByText('Finding 1')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Hide details for Finding 15,/ }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      screen.getByText('No additional details were reported by Hub.'),
+    ).toBeInTheDocument();
+  });
+
+  it('locates the finding again when Back leaves an unknown one', () => {
+    render(
+      <MemoryRouter initialEntries={['/migration?issue=issue-15']}>
+        <FindingsTable issues={issues(25)} />
+        <IssueLink id="does-not-exist" />
+        <BackLink />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Previous table page' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Link to does-not-exist' }),
+    );
+    expect(screen.getByText('Finding 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/migration?issue=issue-15|POP',
+    );
+    expect(screen.getByText('Finding 11')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Hide details for Finding 15,/ }),
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('writes and clears the finding without adding history entries', () => {
     renderTable(issues(3), ['/home', '/migration?view=all'], 1);
     fireEvent.click(expander('Finding 2'));

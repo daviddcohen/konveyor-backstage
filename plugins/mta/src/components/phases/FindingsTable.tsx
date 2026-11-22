@@ -171,7 +171,8 @@ export function FindingsTable({ issues }: { issues: MigrationIssue[] }) {
    * A link opens the page that holds its finding. Only a change of the
    * parameter moves the page, so paging and searching are not undone, and an
    * id that search or sort hides leaves the link as it is without expanding
-   * anything.
+   * anything. A link to a finding that is not in the table forgets the one
+   * applied before, so following the earlier link again finds it.
    */
   const appliedIssue = useRef<string | null>(null);
   useEffect(() => {
@@ -184,6 +185,7 @@ export function FindingsTable({ issues }: { issues: MigrationIssue[] }) {
     }
     const targetOffset = issuePageOffset(orderedIds, issueId, pageSize);
     if (targetOffset === undefined) {
+      appliedIssue.current = null;
       return;
     }
     appliedIssue.current = issueId;
