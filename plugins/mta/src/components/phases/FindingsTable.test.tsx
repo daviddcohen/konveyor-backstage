@@ -318,6 +318,123 @@ describe('finding links', () => {
     ).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('locates the finding again after it was closed and the page changed', () => {
+    render(
+      <MemoryRouter initialEntries={['/migration?issue=issue-15']}>
+        <FindingsTable issues={issues(25)} />
+        <IssueLink id="issue-15" />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Hide details for Finding 15,/ }),
+    );
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/migration|REPLACE',
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Previous table page' }),
+    );
+    expect(screen.getByText('Finding 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Link to issue-15' }));
+    expect(screen.getByText('Finding 11')).toBeInTheDocument();
+    expect(screen.queryByText('Finding 1')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Hide details for Finding 15,/ }),
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  describe('when clearing a search that hid the linked finding', () => {
+    // Every finding but the linked one matches "minor", so search hides it.
+    const findings = issues(25).map(finding =>
+      finding.id === 'issue-15'
+        ? { ...finding, severity: 'critical' as const }
+        : finding,
+    );
+    const scrollIntoView = jest.fn();
+
+    beforeEach(() => {
+      scrollIntoView.mockClear();
+      (Element.prototype as { scrollIntoView?: () => void }).scrollIntoView =
+        scrollIntoView;
+    });
+
+    afterEach(() => {
+      delete (Element.prototype as { scrollIntoView?: () => void })
+        .scrollIntoView;
+    });
+
+    function search(value: string) {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Filter' }), {
+        target: { value },
+      });
+    }
+
+    function expectLinkedFindingInView() {
+      expect(screen.getByText('Finding 11')).toBeInTheDocument();
+      expect(screen.queryByText('Finding 1')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /^Hide details for Finding 15,/ }),
+      ).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        screen.getByText('No additional details were reported by Hub.'),
+      ).toBeInTheDocument();
+      expect(scrollIntoView).toHaveBeenCalled();
+    }
+
+    it('shows the finding again on its page', () => {
+      renderTable(findings, ['/migration?issue=issue-15']);
+      search('minor');
+      expect(
+        screen.queryByText('No additional details were reported by Hub.'),
+      ).not.toBeInTheDocument();
+      scrollIntoView.mockClear();
+      search('');
+      expectLinkedFindingInView();
+    });
+
+    it('shows the finding again after paging the search results', () => {
+      renderTable(findings, ['/migration?issue=issue-15']);
+      search('minor');
+      fireEvent.click(screen.getByRole('button', { name: 'Next table page' }));
+      expect(screen.getByText('Finding 12')).toBeInTheDocument();
+      scrollIntoView.mockClear();
+      search('');
+      expectLinkedFindingInView();
+    });
+
+    it('keeps the page the user chose before the search', () => {
+      renderTable(findings, ['/migration?issue=issue-15']);
+      fireEvent.click(screen.getByRole('button', { name: 'Next table page' }));
+      search('minor');
+      search('');
+      // Page three, as when the search keeps the linked finding.
+      expect(screen.getByText('Finding 21')).toBeInTheDocument();
+      expect(screen.queryByText('Finding 11')).not.toBeInTheDocument();
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/migration?issue=issue-15|POP',
+      );
+    });
+  });
+
+  it('keeps the chosen page while the linked finding stays in the results', () => {
+    renderTable(issues(35), ['/migration?issue=issue-15']);
+    fireEvent.click(screen.getByRole('button', { name: 'Next table page' }));
+    // Every finding matches, so the linked one never leaves the results.
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter' }), {
+      target: { value: 'dependency' },
+    });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter' }), {
+      target: { value: '' },
+    });
+    // Page three, which the user chose, not page two, which holds the link.
+    expect(screen.getByText('Finding 21')).toBeInTheDocument();
+    expect(screen.queryByText('Finding 11')).not.toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/migration?issue=issue-15|POP',
+    );
+  });
+
   it('writes and clears the finding without adding history entries', () => {
     renderTable(issues(3), ['/home', '/migration?view=all'], 1);
     fireEvent.click(expander('Finding 2'));

@@ -168,33 +168,42 @@ export function FindingsTable({ issues }: { issues: MigrationIssue[] }) {
     : ordered;
 
   /*
-   * A link opens the page that holds its finding. Only a change of the
-   * parameter moves the page, so paging and searching are not undone, and an
-   * id that search or sort hides leaves the link as it is without expanding
-   * anything. A link to a finding that is not in the table forgets the one
-   * applied before, so following the earlier link again finds it.
+   * A link opens the page that holds its finding. The page moves only when
+   * the parameter changes or its finding comes back into the results, so
+   * paging and searching are not undone while the finding stays in them, and
+   * an id that search or sort hides leaves the link as it is without
+   * expanding anything. Once the user pages the unfiltered findings away from
+   * the link, their page wins until the link changes.
    */
   const appliedIssue = useRef<string | null>(null);
+  const pagedAwayFrom = useRef<string | null>(null);
   useEffect(() => {
-    if (!issueId) {
-      appliedIssue.current = null;
+    const targetOffset = issuePageOffset(orderedIds, issueId, pageSize);
+    if (targetOffset === undefined) {
+      if (!issueId || pagedAwayFrom.current !== issueId) {
+        appliedIssue.current = null;
+      }
       return;
     }
     if (appliedIssue.current === issueId) {
       return;
     }
-    const targetOffset = issuePageOffset(orderedIds, issueId, pageSize);
-    if (targetOffset === undefined) {
-      appliedIssue.current = null;
-      return;
-    }
     appliedIssue.current = issueId;
+    pagedAwayFrom.current = null;
     setPage(current =>
       current.queryKey === queryKey && current.offset === targetOffset
         ? current
         : { offset: targetOffset, queryKey },
     );
   }, [issueId, orderedIds, pageSize, queryKey]);
+
+  // Paging inside search results does not move the user away from the link.
+  const turnPage = (nextOffset: number) => {
+    if (issueId && !search.trim()) {
+      pagedAwayFrom.current = issueId;
+    }
+    setPage({ offset: nextOffset, queryKey });
+  };
 
   const toggleIssue = useCallback(
     (id: string) =>
@@ -334,16 +343,12 @@ export function FindingsTable({ issues }: { issues: MigrationIssue[] }) {
                   totalCount: ordered.length,
                   hasNextPage: offset + pageSize < ordered.length,
                   hasPreviousPage: offset > 0,
-                  onNextPage: () =>
-                    setPage({ offset: offset + pageSize, queryKey }),
+                  onNextPage: () => turnPage(offset + pageSize),
                   onPreviousPage: () =>
-                    setPage({
-                      offset: Math.max(0, offset - pageSize),
-                      queryKey,
-                    }),
+                    turnPage(Math.max(0, offset - pageSize)),
                   onPageSizeChange: size => {
                     setPageSize(size);
-                    setPage({ offset: 0, queryKey });
+                    turnPage(0);
                   },
                 }
               : { type: 'none' }
