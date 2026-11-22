@@ -117,11 +117,9 @@ For the original prototype requirements, parity gaps, and six recorded walkthrou
 
 ## UI Design System
 
-- [Designing for Backstage](https://backstage.io/docs/dls/design)
-- [Backstage components storybook](https://backstage.io/storybook) - `@backstage/core-components`
-- Backstage v1.10 design system builds on top of [Material UI](https://material-ui.com/)
+- [Backstage UI](https://ui.backstage.io) - `@backstage/ui`, the components and tokens the plugin UI uses
 
 ## References
 
-- [RHDH v1.10 docs](https://docs.redhat.com/en/documentation/red_hat_developer_hub/1.10)
+- [RHDH 2.1 docs](https://docs.redhat.com/en/documentation/red_hat_developer_hub/2.1)
 - [Backstage](https://backstage.io)
