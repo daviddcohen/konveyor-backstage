@@ -36,13 +36,13 @@ See [`dev-host/README.md`](dev-host/README.md) for host details, scenarios, and 
 
 ## Plugin Details
 
-| Plugin / module                | Role                                            | Interfaces                                                                                                                                                  |
-| ------------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugins/mta`                  | Live migration tab, home cards, and `/mta` page | `EntityContentBlueprint`, `HomePageWidgetBlueprint`, `PageBlueprint`, `MtaApiClient`                                                                        |
-| `plugins/mta-backend`          | Hub REST client/proxy                           | `/api/mta-backend/applications`, per-application tasks/analysis/profiles/discovery/analyze, tasks, incidents, targets, archetypes; `/entity/:name` retained |
-| `plugins/mta-mock-hub-backend` | Legacy demo only                                | Simulated registration/discovery; not the live Hub                                                                                                          |
-| Catalog entity-provider module | Legacy mock ingestion                           | Scheduled mock-Hub reads, not the development startup snapshot                                                                                              |
-| Scaffolder actions module      | Legacy mock registration                        | `mta:register-application`; not live production registration yet                                                                                            |
+| Plugin / module                | Role                                            | Interfaces                                                                                                                                                                              |
+| ------------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plugins/mta`                  | Live migration tab, home cards, and `/mta` page | `EntityContentBlueprint`, `HomePageWidgetBlueprint`, `PageBlueprint`, `FormFieldBlueprint` (`MtaApplicationSource` scaffolder field), `MtaApiClient`, optional `deploymentAssetsApiRef` |
+| `plugins/mta-backend`          | Hub REST client/proxy                           | `/api/mta-backend/applications`, per-application tasks/analysis/profiles/discovery/analyze, tasks, incidents, targets, archetypes; `/entity/:name` retained                             |
+| `plugins/mta-mock-hub-backend` | Legacy demo only                                | Simulated registration/discovery; not the live Hub                                                                                                                                      |
+| Catalog entity-provider module | Legacy mock ingestion                           | Scheduled mock-Hub reads, not the development startup snapshot                                                                                                                          |
+| Scaffolder actions module      | Legacy mock registration                        | `mta:register-application`; not live production registration yet                                                                                                                        |
 
 ### Catalog connections
 
